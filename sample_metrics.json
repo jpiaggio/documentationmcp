@@ -1,0 +1,72 @@
+[
+  {
+    "timestamp": "2026-03-10T20:28:26.377730",
+    "execution_time_seconds": 45,
+    "files_processed": 500,
+    "api_calls_saved": 22500,
+    "cost_saved": 22.5,
+    "token_reduction_percent": 80.0,
+    "modules_analyzed": 3,
+    "cache_hit_rate": 0.5
+  },
+  {
+    "timestamp": "2026-03-10T20:28:26.377971",
+    "execution_time_seconds": 42,
+    "files_processed": 450,
+    "api_calls_saved": 20250,
+    "cost_saved": 20.25,
+    "token_reduction_percent": 80.0,
+    "modules_analyzed": 3,
+    "cache_hit_rate": 0.55
+  },
+  {
+    "timestamp": "2026-03-10T20:28:26.378103",
+    "execution_time_seconds": 39,
+    "files_processed": 400,
+    "api_calls_saved": 18000,
+    "cost_saved": 18.0,
+    "token_reduction_percent": 80.0,
+    "modules_analyzed": 3,
+    "cache_hit_rate": 0.6
+  },
+  {
+    "timestamp": "2026-03-10T20:28:26.378235",
+    "execution_time_seconds": 36,
+    "files_processed": 350,
+    "api_calls_saved": 15750,
+    "cost_saved": 15.75,
+    "token_reduction_percent": 80.0,
+    "modules_analyzed": 3,
+    "cache_hit_rate": 0.65
+  },
+  {
+    "timestamp": "2026-03-10T20:28:26.378369",
+    "execution_time_seconds": 33,
+    "files_processed": 300,
+    "api_calls_saved": 13500,
+    "cost_saved": 13.5,
+    "token_reduction_percent": 80.0,
+    "modules_analyzed": 3,
+    "cache_hit_rate": 0.7
+  },
+  {
+    "timestamp": "2026-03-10T20:28:26.378528",
+    "execution_time_seconds": 30,
+    "files_processed": 250,
+    "api_calls_saved": 11250,
+    "cost_saved": 11.25,
+    "token_reduction_percent": 80.0,
+    "modules_analyzed": 3,
+    "cache_hit_rate": 0.75
+  },
+  {
+    "timestamp": "2026-03-10T20:28:26.378700",
+    "execution_time_seconds": 27,
+    "files_processed": 200,
+    "api_calls_saved": 9000,
+    "cost_saved": 9.0,
+    "token_reduction_percent": 80.0,
+    "modules_analyzed": 3,
+    "cache_hit_rate": 0.8
+  }
+]

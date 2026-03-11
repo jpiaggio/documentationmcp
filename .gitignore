@@ -5,42 +5,46 @@ env/
 __pycache__/
 *.py[cod]
 *$py.class
-.venv/**
-venv/**
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-*
 
 # OS
 .DS_Store
 Thumbs.db
+.AppleDouble/
+.LSOverride/
 
 # Cache and temporary files
 .cartographer_cache/
 .cartographer_config/
 *.cache
 *.tmp
-.cache/
 
 # Python specific
 *.egg-info/
 dist/
 build/
-*.egg-info/**
-dist/**
-build/**
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.coverage
 
 # Node/npm (if applicable)
 node_modules/
 .npm
+package-lock.json
 
 # Logs
 *.log
 npm-debug.log*
+pip-log.txt
 
 # Misc
 .env
 .env.local
+.DS_Store

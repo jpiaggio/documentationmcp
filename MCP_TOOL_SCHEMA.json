@@ -1,0 +1,461 @@
+{
+  "server": {
+    "name": "cartographer-business-analyzer-pro",
+    "version": "2.0.0",
+    "description": "Enterprise-grade business rules and customer journey analysis with incremental indexing and context pruning",
+    "capabilities": {
+      "incremental_indexing": {
+        "enabled": true,
+        "git_aware": true,
+        "description": "Only process files changed since last analysis"
+      },
+      "context_pruning": {
+        "enabled": true,
+        "lazy_loading": true,
+        "description": "Send only function signatures and docstrings, fetch full code on-demand"
+      },
+      "parallel_processing": {
+        "enabled": true,
+        "max_workers": 16,
+        "description": "Analyze multiple modules concurrently"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "analyze_module",
+      "description": "Analyze a single module/repository with incremental indexing and context pruning. Perfect for individual service analysis.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "module_path": {
+            "type": "string",
+            "description": "Absolute path to the module/repository root directory"
+          },
+          "file_extensions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [".py", ".java", ".go", ".ts", ".js"]
+            },
+            "description": "File extensions to scan for analysis (e.g., ['.py', '.java'])",
+            "default": [".py"]
+          },
+          "force_reindex": {
+            "type": "boolean",
+            "description": "Force complete reindex of all files, ignoring cache. Use when you need fresh analysis.",
+            "default": false
+          },
+          "extract_business_rules": {
+            "type": "boolean",
+            "description": "Extract business-level insights (rules, entities, journeys) vs technical structure",
+            "default": true
+          },
+          "with_docstrings_only": {
+            "type": "boolean",
+            "description": "Return only function signatures and docstrings (context pruning). Set to false for full code context.",
+            "default": true
+          },
+          "max_files": {
+            "type": "integer",
+            "description": "Limit the number of files to analyze (useful for large repos)",
+            "default": 1000
+          }
+        },
+        "required": ["module_path"]
+      },
+      "output": {
+        "status": "success|error|no_changes",
+        "module": "string",
+        "files_processed": "number",
+        "cypher_statements": "number",
+        "pruned_elements": "number",
+        "statistics": {
+          "mode": "full_index_initial|incremental_index|no_changes",
+          "total_changed": "number",
+          "total_files_to_process": "number"
+        },
+        "indexing_cache_stats": {
+          "cached_files": "number",
+          "last_indexed": "ISO8601 timestamp",
+          "last_commit": "git SHA"
+        }
+      }
+    },
+    {
+      "name": "analyze_multiple_modules",
+      "description": "Analyze multiple modules/repositories in parallel. Ideal for monorepos and microservice architectures.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "modules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "Absolute path to module directory"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Human-readable name for this module (e.g., 'Backend API', 'Worker Service')"
+                },
+                "file_extensions": {
+                  "type": "array",
+                  "items": {"type": "string"},
+                  "description": "Extensions specific to this module",
+                  "default": [".py"]
+                }
+              },
+              "required": ["path"]
+            },
+            "description": "List of modules to analyze in parallel",
+            "minItems": 1,
+            "maxItems": 10
+          },
+          "parallel_workers": {
+            "type": "integer",
+            "description": "Number of concurrent workers. Higher = faster but more resource usage.",
+            "default": 4,
+            "minimum": 1,
+            "maximum": 16
+          },
+          "force_reindex": {
+            "type": "boolean",
+            "description": "Force reindex across all modules",
+            "default": false
+          }
+        },
+        "required": ["modules"]
+      },
+      "output": {
+        "status": "success|partial_failure|error",
+        "total_modules": "number",
+        "modules_analyzed": "number",
+        "total_files_processed": "number",
+        "total_statements": "number",
+        "module_results": {
+          "[module_name]": {
+            "status": "success|error|no_changes",
+            "files_processed": "number",
+            "cypher_statements": "number",
+            "error": "string (if status=error)"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_module_context",
+      "description": "Get pruned context (function/class signatures + docstrings) for efficient analysis. Minimal token usage.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "module_path": {
+            "type": "string",
+            "description": "Path to module file or directory to get context for"
+          },
+          "language": {
+            "type": "string",
+            "enum": ["python", "java", "go", "typescript", "javascript"],
+            "description": "Programming language of the module"
+          },
+          "include_full_code": {
+            "type": "boolean",
+            "description": "Include full implementations instead of just signatures. WARNING: Greatly increases token usage.",
+            "default": false
+          },
+          "filter_by_type": {
+            "type": "string",
+            "enum": ["function", "class", "method", "all"],
+            "description": "Filter to specific element types",
+            "default": "all"
+          }
+        },
+        "required": ["module_path", "language"]
+      },
+      "output": {
+        "language": "string",
+        "total_elements": "number",
+        "elements": [
+          {
+            "name": "string",
+            "type": "function|class|method",
+            "signature": "string",
+            "docstring": "string",
+            "file_path": "string",
+            "start_line": "number",
+            "end_line": "number"
+          }
+        ]
+      }
+    },
+    {
+      "name": "query_business_rules",
+      "description": "Query business rules, constraints, validations, and eligibility logic extracted from the module.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "module_name": {
+            "type": "string",
+            "description": "Name of the module to query"
+          },
+          "rule_type": {
+            "type": "string",
+            "enum": ["validation", "constraint", "threshold", "eligibility", "all"],
+            "description": "Type of business rule to retrieve",
+            "default": "all"
+          },
+          "entity_type": {
+            "type": "string",
+            "description": "Optional: Filter by entity type (e.g., 'Order', 'User', 'Payment')"
+          },
+          "include_implementation": {
+            "type": "boolean",
+            "description": "Include function implementation references",
+            "default": false
+          }
+        },
+        "required": ["module_name"]
+      },
+      "output": {
+        "module_name": "string",
+        "total_rules": "number",
+        "rules": [
+          {
+            "type": "validation|constraint|threshold|eligibility",
+            "entity": "string",
+            "description": "string",
+            "implementation_reference": "string",
+            "line_numbers": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_customer_journey_map",
+      "description": "Get the complete customer journey map including steps, entities, business processes, and external integrations.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "module_name": {
+            "type": "string",
+            "description": "Module to analyze for journey mapping"
+          },
+          "view_type": {
+            "type": "string",
+            "enum": ["journey", "entities", "processes", "integrations", "events", "all"],
+            "description": "What aspect of the journey to focus on",
+            "default": "all"
+          },
+          "include_details": {
+            "type": "boolean",
+            "description": "Include detailed descriptions and metadata",
+            "default": true
+          }
+        },
+        "required": ["module_name"]
+      },
+      "output": {
+        "module_name": "string",
+        "journey": {
+          "steps": [
+            {
+              "step": "string (e.g., AUTHENTICATE, BROWSE, CHECKOUT)",
+              "description": "string",
+              "order": "number"
+            }
+          ],
+          "total_steps": "number"
+        },
+        "entities": {
+          "[entity_type]": [
+            {
+              "name": "string",
+              "properties": ["string"],
+              "relationships": ["string"]
+            }
+          ]
+        },
+        "processes": [
+          {
+            "name": "string",
+            "steps": ["string"],
+            "description": "string"
+          }
+        ],
+        "integrations": [
+          {
+            "system": "string (e.g., 'stripe', 'kafka')",
+            "type": "payment|messaging|notification|analytics",
+            "description": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_indexing_status",
+      "description": "Check incremental indexing status for a module. Shows what's cached, what's changed, and optimization metrics.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "module_path": {
+            "type": "string",
+            "description": "Path to the module to check status for"
+          }
+        },
+        "required": ["module_path"]
+      },
+      "output": {
+        "cache_directory": "string",
+        "cached_files": "number",
+        "last_indexed": "ISO8601 timestamp",
+        "last_commit": "git SHA",
+        "total_files_processed": "number",
+        "indexed_extensions": ["string"],
+        "savings": {
+          "estimated_api_calls_saved": "number",
+          "estimated_cost_saved": "USD amount",
+          "cache_hit_rate": "percentage"
+        }
+      }
+    },
+    {
+      "name": "fetch_full_code",
+      "description": "Fetch the complete code implementation for a specific function/method. Use when pruned context isn't sufficient.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Absolute path to the file containing the code"
+          },
+          "element_name": {
+            "type": "string",
+            "description": "Name of the function/method/class"
+          },
+          "start_line": {
+            "type": "integer",
+            "description": "Starting line number (1-indexed)"
+          },
+          "end_line": {
+            "type": "integer",
+            "description": "Ending line number (1-indexed)"
+          },
+          "context_lines": {
+            "type": "integer",
+            "description": "Number of surrounding lines to include for context",
+            "default": 5,
+            "minimum": 0,
+            "maximum": 20
+          }
+        },
+        "required": ["file_path", "element_name", "start_line", "end_line"]
+      },
+      "output": {
+        "element_name": "string",
+        "file_path": "string",
+        "code": "string (full implementation with context)",
+        "total_lines": "number",
+        "language": "string"
+      }
+    }
+  ],
+  "cost_optimization": {
+    "description": "Estimated cost savings from incremental indexing and context pruning",
+    "scenarios": [
+      {
+        "description": "Small service (100 files, 5% daily change)",
+        "without_optimization": {
+          "daily_api_calls": 500,
+          "daily_cost": "$0.50"
+        },
+        "with_optimization": {
+          "daily_api_calls": 25,
+          "daily_cost": "$0.025",
+          "monthly_savings": "$14"
+        }
+      },
+      {
+        "description": "Large monorepo (2000 files, 10% daily change)",
+        "without_optimization": {
+          "daily_api_calls": 10000,
+          "daily_cost": "$10"
+        },
+        "with_optimization": {
+          "daily_api_calls": 1000,
+          "daily_cost": "$1",
+          "monthly_savings": "$270"
+        }
+      },
+      {
+        "description": "Enterprise platform (5000+ files, 5% daily change)",
+        "without_optimization": {
+          "daily_api_calls": 25000,
+          "daily_cost": "$25"
+        },
+        "with_optimization": {
+          "daily_api_calls": 1250,
+          "daily_cost": "$1.25",
+          "monthly_savings": "$712.50"
+        }
+      }
+    ]
+  },
+  "example_workflow": {
+    "description": "Typical usage flow for maximum efficiency",
+    "steps": [
+      {
+        "step": 1,
+        "call": "analyze_multiple_modules",
+        "input": {
+          "modules": [
+            {"path": "/backend", "name": "API"},
+            {"path": "/worker", "name": "Jobs"}
+          ],
+          "parallel_workers": 4
+        },
+        "notes": "First run: analyzes all files, caches metadata. Subsequent runs: only changed files."
+      },
+      {
+        "step": 2,
+        "call": "get_module_context",
+        "input": {
+          "module_path": "/backend",
+          "language": "python",
+          "include_full_code": false
+        },
+        "notes": "Get pruned context (signatures + docstrings) for analysis. Minimal tokens."
+      },
+      {
+        "step": 3,
+        "call": "query_business_rules",
+        "input": {
+          "module_name": "API",
+          "rule_type": "all"
+        },
+        "notes": "Extract business rules from analyzed module"
+      },
+      {
+        "step": 4,
+        "call": "get_customer_journey_map",
+        "input": {
+          "module_name": "API",
+          "view_type": "all"
+        },
+        "notes": "Get complete journey map and integrations"
+      },
+      {
+        "step": 5,
+        "call": "fetch_full_code",
+        "input": {
+          "file_path": "/backend/checkout.py",
+          "element_name": "process_payment",
+          "start_line": 125,
+          "end_line": 180
+        },
+        "notes": "Optional: Fetch full implementation only when needed"
+      }
+    ]
+  }
+}
