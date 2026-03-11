@@ -1,0 +1,31 @@
+# Environment
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache and temporary files
+.cartographer_cache/
+.cartographer_config/
+*.cache
+*.tmp
+
+# Python specific
+*.egg-info/
+dist/
+build/
+
+# Documentation (generated files - uncomment if needed)
+# DOCUMENTATION_INDEX.md
