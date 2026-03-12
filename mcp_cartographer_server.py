@@ -130,6 +130,103 @@ def load_from_cypher(cypher_statements):
                 graph.add_edge(source_id, rel_type, target_id)
 
 
+@server.list_tools()
+async def list_tools():
+    """List available tools."""
+    return [
+        Tool(
+            name="list_modules",
+            description="List all modules in the code graph",
+            inputSchema={"type": "object", "properties": {}, "required": []}
+        ),
+        Tool(
+            name="list_functions",
+            description="List all functions in the code graph",
+            inputSchema={"type": "object", "properties": {}, "required": []}
+        ),
+        Tool(
+            name="list_classes",
+            description="List all classes in the code graph",
+            inputSchema={"type": "object", "properties": {}, "required": []}
+        ),
+        Tool(
+            name="get_module_contents",
+            description="Get all functions and classes in a specific module",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "module_name": {
+                        "type": "string",
+                        "description": "Name of the module to query"
+                    }
+                },
+                "required": ["module_name"]
+            }
+        ),
+        Tool(
+            name="get_module_dependencies",
+            description="Get all modules that a specific module depends on",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "module_name": {
+                        "type": "string",
+                        "description": "Name of the module to query"
+                    }
+                },
+                "required": ["module_name"]
+            }
+        ),
+        Tool(
+            name="find_function",
+            description="Find a function by name",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "function_name": {
+                        "type": "string",
+                        "description": "Name of the function to find"
+                    }
+                },
+                "required": ["function_name"]
+            }
+        ),
+        Tool(
+            name="find_class",
+            description="Find a class by name",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "class_name": {
+                        "type": "string",
+                        "description": "Name of the class to find"
+                    }
+                },
+                "required": ["class_name"]
+            }
+        ),
+        Tool(
+            name="get_dependency_graph",
+            description="Get the dependency graph for a module",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "module_name": {
+                        "type": "string",
+                        "description": "Name of the module"
+                    }
+                },
+                "required": ["module_name"]
+            }
+        ),
+        Tool(
+            name="graph_stats",
+            description="Get statistics about the loaded graph",
+            inputSchema={"type": "object", "properties": {}, "required": []}
+        )
+    ]
+
+
 @server.call_tool()
 async def call_tool(name: str, arguments: dict) -> str:
     """Handle tool calls."""
@@ -268,113 +365,6 @@ async def call_tool(name: str, arguments: dict) -> str:
     return f"Unknown tool: {name}"
 
 
-async def main():
-    """Run the MCP server."""
-    # Define tools
-    tools = [
-        Tool(
-            name="list_modules",
-            description="List all modules in the code graph",
-            inputSchema={"type": "object", "properties": {}, "required": []}
-        ),
-        Tool(
-            name="list_functions",
-            description="List all functions in the code graph",
-            inputSchema={"type": "object", "properties": {}, "required": []}
-        ),
-        Tool(
-            name="list_classes",
-            description="List all classes in the code graph",
-            inputSchema={"type": "object", "properties": {}, "required": []}
-        ),
-        Tool(
-            name="get_module_contents",
-            description="Get all functions and classes in a specific module",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "module_name": {
-                        "type": "string",
-                        "description": "Name of the module to query"
-                    }
-                },
-                "required": ["module_name"]
-            }
-        ),
-        Tool(
-            name="get_module_dependencies",
-            description="Get all modules that a specific module depends on",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "module_name": {
-                        "type": "string",
-                        "description": "Name of the module to query"
-                    }
-                },
-                "required": ["module_name"]
-            }
-        ),
-        Tool(
-            name="find_function",
-            description="Find a function by name",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "function_name": {
-                        "type": "string",
-                        "description": "Name of the function to find"
-                    }
-                },
-                "required": ["function_name"]
-            }
-        ),
-        Tool(
-            name="find_class",
-            description="Find a class by name",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "class_name": {
-                        "type": "string",
-                        "description": "Name of the class to find"
-                    }
-                },
-                "required": ["class_name"]
-            }
-        ),
-        Tool(
-            name="get_dependency_graph",
-            description="Get the dependency graph for a module",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "module_name": {
-                        "type": "string",
-                        "description": "Name of the module"
-                    }
-                },
-                "required": ["module_name"]
-            }
-        ),
-        Tool(
-            name="graph_stats",
-            description="Get statistics about the loaded graph",
-            inputSchema={"type": "object", "properties": {}, "required": []}
-        )
-    ]
-    
-    # Register tools with the server
-    server.set_tools(tools)
-    
-    # Run the server
-    async with server.stdio_session() as session:
-        try:
-            async for _ in session:
-                pass
-        except KeyboardInterrupt:
-            pass
-
-
 if __name__ == "__main__":
-    asyncio.run(main())
+    # Run the server
+    server.run(["stdio"])
